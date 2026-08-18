@@ -1,5 +1,9 @@
 package com.missionassist.app.ui.conversation
 
+import android.Manifest
+import android.content.pm.PackageManager
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -14,12 +18,48 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
+import com.missionassist.app.speech.SpeechRecognizerManager
+import com.missionassist.app.speech.SpeechState
 
 @Composable
 fun ConversationScreen(modifier: Modifier = Modifier) {
+    val context = LocalContext.current
+    val speechManager = remember { SpeechRecognizerManager(context) }
+    val speechState by speechManager.state.collectAsState()
+
+    DisposableEffect(Unit) {
+        onDispose {
+            speechManager.destroy()
+        }
+    }
+
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted: Boolean ->
+        if (isGranted) {
+            speechManager.startListening()
+        } else {
+            speechManager.setPermissionDenied()
+        }
+    }
+
+    val startConversation = {
+        if (ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
+            speechManager.startListening()
+        } else {
+            permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+        }
+    }
+
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -61,8 +101,14 @@ fun ConversationScreen(modifier: Modifier = Modifier) {
                     .fillMaxWidth()
                     .height(100.dp)
             ) {
+                val youSaidText = when (val state = speechState) {
+                    is SpeechState.Idle -> "Your speech will appear here"
+                    is SpeechState.Listening -> "Listening..."
+                    is SpeechState.Result -> state.text
+                    is SpeechState.Error -> state.message
+                }
                 Text(
-                    text = "Your speech will appear here",
+                    text = youSaidText,
                     modifier = Modifier.padding(16.dp),
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -97,7 +143,7 @@ fun ConversationScreen(modifier: Modifier = Modifier) {
             modifier = Modifier.fillMaxWidth()
         ) {
             Button(
-                onClick = { /* No functionality yet */ },
+                onClick = startConversation,
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text(text = "Start Conversation")
