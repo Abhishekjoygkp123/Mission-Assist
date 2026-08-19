@@ -28,10 +28,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
+import android.widget.Toast
 import com.missionassist.app.speech.SpeechRecognizerManager
 import com.missionassist.app.speech.SpeechState
 import com.missionassist.app.translation.TranslationManager
 import com.missionassist.app.translation.TranslationState
+import com.missionassist.app.tts.TtsManager
+import com.missionassist.app.tts.TtsState
 
 @Composable
 fun ConversationScreen(modifier: Modifier = Modifier) {
@@ -42,10 +45,14 @@ fun ConversationScreen(modifier: Modifier = Modifier) {
     val translationManager = remember { TranslationManager() }
     val translationState by translationManager.state.collectAsState()
 
+    val ttsManager = remember { TtsManager(context) }
+    val ttsState by ttsManager.state.collectAsState()
+
     DisposableEffect(Unit) {
         onDispose {
             speechManager.destroy()
             translationManager.close()
+            ttsManager.shutdown()
         }
     }
 
@@ -171,7 +178,21 @@ fun ConversationScreen(modifier: Modifier = Modifier) {
             }
             Spacer(modifier = Modifier.height(8.dp))
             Button(
-                onClick = { /* No functionality yet */ },
+                onClick = {
+                    val currentTranslation = translationState
+                    if (currentTranslation is TranslationState.Success) {
+                        val currentTtsState = ttsState
+                        if (currentTtsState is TtsState.Ready) {
+                            ttsManager.speak(currentTranslation.text)
+                        } else if (currentTtsState is TtsState.Error) {
+                            Toast.makeText(context, currentTtsState.message, Toast.LENGTH_SHORT).show()
+                        } else {
+                            Toast.makeText(context, "Text-to-Speech is initializing...", Toast.LENGTH_SHORT).show()
+                        }
+                    } else {
+                        Toast.makeText(context, "No translation available to play.", Toast.LENGTH_SHORT).show()
+                    }
+                },
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text(text = "Play Translation")
