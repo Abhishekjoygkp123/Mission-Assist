@@ -2,6 +2,7 @@ package com.missionassist.app.ui.conversation
 
 import android.Manifest
 import android.content.pm.PackageManager
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
@@ -22,13 +23,15 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
-import android.widget.Toast
+import com.google.mlkit.nl.translate.TranslateLanguage
 import com.missionassist.app.speech.SpeechRecognizerManager
 import com.missionassist.app.speech.SpeechState
 import com.missionassist.app.translation.TranslationManager
@@ -48,6 +51,8 @@ fun ConversationScreen(modifier: Modifier = Modifier) {
     val ttsManager = remember { TtsManager(context) }
     val ttsState by ttsManager.state.collectAsState()
 
+    var isTamilToEnglish by remember { mutableStateOf(false) }
+
     DisposableEffect(Unit) {
         onDispose {
             speechManager.destroy()
@@ -59,7 +64,9 @@ fun ConversationScreen(modifier: Modifier = Modifier) {
     LaunchedEffect(speechState) {
         val currentState = speechState
         if (currentState is SpeechState.Result) {
-            translationManager.translate(currentState.text)
+            val sourceLang = if (isTamilToEnglish) TranslateLanguage.TAMIL else TranslateLanguage.ENGLISH
+            val targetLang = if (isTamilToEnglish) TranslateLanguage.ENGLISH else TranslateLanguage.TAMIL
+            translationManager.translate(currentState.text, sourceLang, targetLang)
         }
     }
 
@@ -67,7 +74,8 @@ fun ConversationScreen(modifier: Modifier = Modifier) {
         contract = ActivityResultContracts.RequestPermission()
     ) { isGranted: Boolean ->
         if (isGranted) {
-            speechManager.startListening()
+            val speechLang = if (isTamilToEnglish) "ta-IN" else "en-IN"
+            speechManager.startListening(speechLang)
         } else {
             speechManager.setPermissionDenied()
         }
@@ -75,7 +83,8 @@ fun ConversationScreen(modifier: Modifier = Modifier) {
 
     val startConversation = {
         if (ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
-            speechManager.startListening()
+            val speechLang = if (isTamilToEnglish) "ta-IN" else "en-IN"
+            speechManager.startListening(speechLang)
         } else {
             permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
         }
@@ -98,14 +107,21 @@ fun ConversationScreen(modifier: Modifier = Modifier) {
             horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(text = "English", style = MaterialTheme.typography.titleMedium)
-            IconButton(onClick = { /* No functionality yet */ }) {
+            val leftLang = if (isTamilToEnglish) "Tamil" else "English"
+            val rightLang = if (isTamilToEnglish) "English" else "Tamil"
+
+            Text(text = leftLang, style = MaterialTheme.typography.titleMedium)
+            IconButton(onClick = { 
+                isTamilToEnglish = !isTamilToEnglish
+                speechManager.clear()
+                translationManager.clear()
+            }) {
                 Text(
                     text = "⇄",
                     style = MaterialTheme.typography.headlineMedium
                 )
             }
-            Text(text = "Tamil", style = MaterialTheme.typography.titleMedium)
+            Text(text = rightLang, style = MaterialTheme.typography.titleMedium)
         }
 
         Spacer(modifier = Modifier.height(24.dp))
@@ -183,7 +199,8 @@ fun ConversationScreen(modifier: Modifier = Modifier) {
                     if (currentTranslation is TranslationState.Success) {
                         val currentTtsState = ttsState
                         if (currentTtsState is TtsState.Ready) {
-                            ttsManager.speak(currentTranslation.text)
+                            val ttsLang = if (isTamilToEnglish) "en-IN" else "ta-IN"
+                            ttsManager.speak(currentTranslation.text, ttsLang)
                         } else if (currentTtsState is TtsState.Error) {
                             Toast.makeText(context, currentTtsState.message, Toast.LENGTH_SHORT).show()
                         } else {

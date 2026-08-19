@@ -18,29 +18,33 @@ class TtsManager(context: Context) {
     private var tts: TextToSpeech? = null
     private val _state = MutableStateFlow<TtsState>(TtsState.Initializing)
     val state: StateFlow<TtsState> = _state.asStateFlow()
+    private var isInitialized = false
 
     init {
         tts = TextToSpeech(context) { status ->
             if (status == TextToSpeech.SUCCESS) {
-                val tamilLocale = Locale("ta", "IN")
-                val result = tts?.setLanguage(tamilLocale)
-
-                if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
-                    _state.value = TtsState.Error("Tamil language is not supported or missing data on this device.")
-                } else {
-                    _state.value = TtsState.Ready
-                }
+                isInitialized = true
+                _state.value = TtsState.Ready
             } else {
                 _state.value = TtsState.Error("Text-to-Speech initialization failed.")
             }
         }
     }
 
-    fun speak(text: String) {
-        if (_state.value is TtsState.Ready) {
-            tts?.stop() // Stop any ongoing speech before starting new speech
-            tts?.speak(text, TextToSpeech.QUEUE_FLUSH, null, null)
+    fun speak(text: String, languageCode: String = "ta-IN") {
+        if (!isInitialized) return
+        
+        val locale = if (languageCode == "ta-IN") Locale("ta", "IN") else Locale("en", "IN")
+        val result = tts?.setLanguage(locale)
+        
+        if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
+            _state.value = TtsState.Error("Requested language is not supported or missing data on this device.")
+            return
         }
+        
+        _state.value = TtsState.Ready
+        tts?.stop() // Stop any ongoing speech before starting new speech
+        tts?.speak(text, TextToSpeech.QUEUE_FLUSH, null, null)
     }
 
     fun shutdown() {
