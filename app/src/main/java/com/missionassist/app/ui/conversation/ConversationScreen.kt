@@ -19,6 +19,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -29,6 +30,8 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import com.missionassist.app.speech.SpeechRecognizerManager
 import com.missionassist.app.speech.SpeechState
+import com.missionassist.app.translation.TranslationManager
+import com.missionassist.app.translation.TranslationState
 
 @Composable
 fun ConversationScreen(modifier: Modifier = Modifier) {
@@ -36,9 +39,20 @@ fun ConversationScreen(modifier: Modifier = Modifier) {
     val speechManager = remember { SpeechRecognizerManager(context) }
     val speechState by speechManager.state.collectAsState()
 
+    val translationManager = remember { TranslationManager() }
+    val translationState by translationManager.state.collectAsState()
+
     DisposableEffect(Unit) {
         onDispose {
             speechManager.destroy()
+            translationManager.close()
+        }
+    }
+
+    LaunchedEffect(speechState) {
+        val currentState = speechState
+        if (currentState is SpeechState.Result) {
+            translationManager.translate(currentState.text)
         }
     }
 
@@ -129,8 +143,15 @@ fun ConversationScreen(modifier: Modifier = Modifier) {
                     .fillMaxWidth()
                     .height(100.dp)
             ) {
+                val translatedText = when (val state = translationState) {
+                    is TranslationState.Idle -> "Translated text will appear here"
+                    is TranslationState.DownloadingModel -> "Downloading translation model..."
+                    is TranslationState.Translating -> "Translating..."
+                    is TranslationState.Success -> state.text
+                    is TranslationState.Error -> state.message
+                }
                 Text(
-                    text = "Translated text will appear here",
+                    text = translatedText,
                     modifier = Modifier.padding(16.dp),
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
