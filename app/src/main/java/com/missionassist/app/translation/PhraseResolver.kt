@@ -16,7 +16,18 @@ object PhraseResolver {
         PhraseEntry("Thank you", "நன்றி"),
         PhraseEntry("I need water", "எனக்கு தண்ணீர் வேண்டும்"),
         PhraseEntry("I need food", "எனக்கு உணவு வேண்டும்"),
-        PhraseEntry("I need a doctor", "எனக்கு ஒரு மருத்துவர் வேண்டும்"),
+        PhraseEntry(
+            canonicalEnglish = "I need a doctor",
+            canonicalTamil = "எனக்கு ஒரு மருத்துவர் வேண்டும்",
+            tamilVariants = listOf(
+                "எனக்கு டாக்டர் தேவை",
+                "எனக்கு ஒரு டாக்டர் தேவை",
+                "எனக்கு மருத்துவர் தேவை",
+                "டாக்டர் வேண்டும்",
+                "எனக்கு டாக்டர் வேண்டும்"
+            )
+        ),
+        PhraseEntry("I need to see a doctor", "எனக்கு மருத்துவரை பார்க்க வேண்டும்"),
         PhraseEntry("Please call an ambulance", "தயவுசெய்து ஆம்புலன்ஸை அழைக்கவும்"),
         PhraseEntry("Where is the nearest hospital?", "அருகில் உள்ள மருத்துவமனை எங்கே"),
         PhraseEntry("Where is the bathroom?", "கழிப்பறை எங்கே"),
@@ -71,16 +82,34 @@ object PhraseResolver {
         }
     }
 
+    private val doctorTerms = listOf("டாக்டர்", "டாக்டரை", "மருத்துவர்", "மருத்துவரை")
+    private val needSeeTerms = listOf("தேவை", "வேண்டும்", "பார்க்கணும்", "பாக்கணும்", "பார்க்க வேண்டும்")
+
     fun resolve(text: String, sourceLanguage: String, targetLanguage: String): String? {
         val normalizedText = normalize(text)
 
-        return if (sourceLanguage == TranslateLanguage.ENGLISH && targetLanguage == TranslateLanguage.TAMIL) {
+        // 1. Exact curated phrase/variant
+        val exactMatch = if (sourceLanguage == TranslateLanguage.ENGLISH && targetLanguage == TranslateLanguage.TAMIL) {
             englishToTamilMap[normalizedText]
         } else if (sourceLanguage == TranslateLanguage.TAMIL && targetLanguage == TranslateLanguage.ENGLISH) {
             tamilToEnglishMap[normalizedText]
         } else {
             null
         }
+
+        if (exactMatch != null) return exactMatch
+
+        // 2. Curated intent rule
+        if (sourceLanguage == TranslateLanguage.TAMIL && targetLanguage == TranslateLanguage.ENGLISH) {
+            val hasDoctor = doctorTerms.any { normalizedText.contains(it) }
+            val hasNeedSee = needSeeTerms.any { normalizedText.contains(it) }
+            if (hasDoctor && hasNeedSee) {
+                return "I need to see a doctor."
+            }
+        }
+
+        // 3. Existing ML Kit fallback
+        return null
     }
 
     private fun normalize(text: String): String {

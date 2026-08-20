@@ -35,6 +35,7 @@ import com.google.mlkit.nl.translate.TranslateLanguage
 import com.missionassist.app.speech.SpeechRecognizerManager
 import com.missionassist.app.speech.SpeechState
 import com.missionassist.app.translation.TranslationManager
+import com.missionassist.app.translation.TranslationSource
 import com.missionassist.app.translation.TranslationState
 import com.missionassist.app.tts.TtsManager
 import com.missionassist.app.tts.TtsState
@@ -178,6 +179,29 @@ fun ConversationScreen(modifier: Modifier = Modifier) {
                     modifier = Modifier.padding(16.dp),
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
+            }
+            
+            val currentState = translationState
+            if (currentState is TranslationState.Success) {
+                Spacer(modifier = Modifier.height(4.dp))
+                if (currentState.source == TranslationSource.VERIFIED_PHRASE) {
+                    Text(
+                        text = "Curated field phrase",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                } else if (currentState.source == TranslationSource.ML_KIT) {
+                    Text(
+                        text = "Offline AI translation",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.secondary
+                    )
+                    Text(
+                        text = "AI translation may lose context. Verify critical information.",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
             }
         }
 
