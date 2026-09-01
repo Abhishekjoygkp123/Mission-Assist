@@ -19,10 +19,7 @@ sealed class TranslationState {
     data class Error(val message: String) : TranslationState()
 }
 
-class TranslationManager {
-    private var currentTranslator: Translator? = null
-    private var currentSourceLanguage: String? = null
-    private var currentTargetLanguage: String? = null
+class TranslationManager(private val translationClient: TranslationClient) {
 
     private val _state = MutableStateFlow<TranslationState>(TranslationState.Idle)
     val state: StateFlow<TranslationState> = _state.asStateFlow()
@@ -40,39 +37,32 @@ class TranslationManager {
 
         _state.value = TranslationState.DownloadingModel
         
-        if (currentTranslator == null || currentSourceLanguage != sourceLanguage || currentTargetLanguage != targetLanguage) {
-            currentTranslator?.close()
-            val options = TranslatorOptions.Builder()
-                .setSourceLanguage(sourceLanguage)
-                .setTargetLanguage(targetLanguage)
-                .build()
-            currentTranslator = Translation.getClient(options)
-            currentSourceLanguage = sourceLanguage
-            currentTargetLanguage = targetLanguage
-        }
-
-        val conditions = DownloadConditions.Builder()
-            .requireWifi()
-            .build()
-
-        currentTranslator?.downloadModelIfNeeded(conditions)
-            ?.addOnSuccessListener {
-                if (sessionId != currentSessionId) return@addOnSuccessListener
+        translationClient.downloadModelIfNeeded(
+            sourceLanguage = sourceLanguage,
+            targetLanguage = targetLanguage,
+            onSuccess = {
+                if (sessionId != currentSessionId) return@downloadModelIfNeeded
                 _state.value = TranslationState.Translating
-                currentTranslator?.translate(text)
-                    ?.addOnSuccessListener { translatedText ->
-                        if (sessionId != currentSessionId) return@addOnSuccessListener
+                
+                translationClient.translate(
+                    text = text,
+                    sourceLanguage = sourceLanguage,
+                    targetLanguage = targetLanguage,
+                    onSuccess = { translatedText ->
+                        if (sessionId != currentSessionId) return@translate
                         _state.value = TranslationState.Success(translatedText, TranslationSource.ML_KIT)
+                    },
+                    onFailure = { errorMessage ->
+                        if (sessionId != currentSessionId) return@translate
+                        _state.value = TranslationState.Error(errorMessage)
                     }
-                    ?.addOnFailureListener { exception ->
-                        if (sessionId != currentSessionId) return@addOnFailureListener
-                        _state.value = TranslationState.Error(exception.localizedMessage ?: "Translation failed")
-                    }
+                )
+            },
+            onFailure = { errorMessage ->
+                if (sessionId != currentSessionId) return@downloadModelIfNeeded
+                _state.value = TranslationState.Error("Model download failed: $errorMessage")
             }
-            ?.addOnFailureListener { exception ->
-                if (sessionId != currentSessionId) return@addOnFailureListener
-                _state.value = TranslationState.Error("Model download failed: ${exception.localizedMessage}")
-            }
+        )
     }
     
     fun clear() {
@@ -82,7 +72,6 @@ class TranslationManager {
 
     fun close() {
         currentSessionId++
-        currentTranslator?.close()
-        currentTranslator = null
+        translationClient.close()
     }
 }

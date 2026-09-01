@@ -32,8 +32,11 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import com.google.mlkit.nl.translate.TranslateLanguage
+import com.missionassist.app.speech.DefaultSpeechClient
+import com.missionassist.app.speech.SpeechCapability
 import com.missionassist.app.speech.SpeechRecognizerManager
 import com.missionassist.app.speech.SpeechState
+import com.missionassist.app.translation.DefaultTranslationClient
 import com.missionassist.app.translation.TranslationManager
 import com.missionassist.app.translation.TranslationSource
 import com.missionassist.app.translation.TranslationState
@@ -43,16 +46,18 @@ import com.missionassist.app.tts.TtsState
 @Composable
 fun ConversationScreen(modifier: Modifier = Modifier) {
     val context = LocalContext.current
-    val speechManager = remember { SpeechRecognizerManager(context) }
+    val speechManager = remember { SpeechRecognizerManager(DefaultSpeechClient(context)) }
     val speechState by speechManager.state.collectAsState()
+    val speechCapabilityState by speechManager.capabilityState.collectAsState()
+    val speechDownloadError by speechManager.downloadError.collectAsState()
 
-    val translationManager = remember { TranslationManager() }
+    val translationManager = remember { TranslationManager(DefaultTranslationClient()) }
     val translationState by translationManager.state.collectAsState()
 
     val ttsManager = remember { TtsManager(context) }
     val ttsState by ttsManager.state.collectAsState()
 
-    var isTamilToEnglish by remember { mutableStateOf(false) }
+    var conversationDirection by remember { mutableStateOf(ConversationDirection.ENGLISH_TO_TAMIL) }
 
     DisposableEffect(Unit) {
         onDispose {
@@ -64,19 +69,24 @@ fun ConversationScreen(modifier: Modifier = Modifier) {
 
     LaunchedEffect(speechState) {
         val currentState = speechState
-        if (currentState is SpeechState.Result) {
-            val sourceLang = if (isTamilToEnglish) TranslateLanguage.TAMIL else TranslateLanguage.ENGLISH
-            val targetLang = if (isTamilToEnglish) TranslateLanguage.ENGLISH else TranslateLanguage.TAMIL
-            translationManager.translate(currentState.text, sourceLang, targetLang)
+        if (currentState is SpeechState.Result) { 
+            translationManager.translate(
+                currentState.text, 
+                conversationDirection.sourceMlKitLang, 
+                conversationDirection.targetMlKitLang
+            )
         }
+    }
+
+    LaunchedEffect(conversationDirection) {
+        speechManager.checkCapability(conversationDirection.speechLang)
     }
 
     val permissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission()
     ) { isGranted: Boolean ->
         if (isGranted) {
-            val speechLang = if (isTamilToEnglish) "ta-IN" else "en-IN"
-            speechManager.startListening(speechLang)
+            speechManager.startListening(conversationDirection.speechLang)
         } else {
             speechManager.setPermissionDenied()
         }
@@ -84,8 +94,7 @@ fun ConversationScreen(modifier: Modifier = Modifier) {
 
     val startConversation = {
         if (ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
-            val speechLang = if (isTamilToEnglish) "ta-IN" else "en-IN"
-            speechManager.startListening(speechLang)
+            speechManager.startListening(conversationDirection.speechLang)
         } else {
             permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
         }
@@ -108,12 +117,9 @@ fun ConversationScreen(modifier: Modifier = Modifier) {
             horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            val leftLang = if (isTamilToEnglish) "Tamil" else "English"
-            val rightLang = if (isTamilToEnglish) "English" else "Tamil"
-
-            Text(text = leftLang, style = MaterialTheme.typography.titleMedium)
+            Text(text = conversationDirection.labelLeft, style = MaterialTheme.typography.titleMedium)
             IconButton(onClick = { 
-                isTamilToEnglish = !isTamilToEnglish
+                conversationDirection = conversationDirection.swap()
                 speechManager.clear()
                 translationManager.clear()
             }) {
@@ -122,10 +128,78 @@ fun ConversationScreen(modifier: Modifier = Modifier) {
                     style = MaterialTheme.typography.headlineMedium
                 )
             }
-            Text(text = rightLang, style = MaterialTheme.typography.titleMedium)
+            Text(text = conversationDirection.labelRight, style = MaterialTheme.typography.titleMedium)
         }
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 16.dp)
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                val langName = conversationDirection.labelLeft
+                val capabilityText = when (speechCapabilityState) {
+                    SpeechCapability.ON_DEVICE_AVAILABLE -> "$langName speech is ready for offline use."
+                    SpeechCapability.ON_DEVICE_NOT_DOWNLOADED -> "$langName speech can work offline if its speech model is downloaded."
+                    SpeechCapability.ON_DEVICE_DOWNLOADING -> "$langName speech model download is pending/in progress."
+                    SpeechCapability.ONLINE_ONLY -> "$langName speech currently requires internet on this device."
+                    SpeechCapability.UNSUPPORTED -> "$langName speech is not supported by the active speech service."
+                    SpeechCapability.DETECTION_UNAVAILABLE -> "Detailed offline speech support cannot be checked on this Android version."
+                    null -> "Checking speech support..."
+                }
+                
+                Text(
+                    text = capabilityText,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                
+                if (speechDownloadError != null) {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = speechDownloadError ?: "",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.error
+                    )
+                }
+
+                if (speechCapabilityState == SpeechCapability.ON_DEVICE_NOT_DOWNLOADED) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Button(onClick = { speechManager.triggerModelDownload(conversationDirection.speechLang) }) {
+                            Text("Download for Offline Use")
+                        }
+                        Button(onClick = {
+                            val success = speechManager.openSpeechSettings()
+                            if (!success) {
+                                Toast.makeText(context, "Cannot open settings on this device.", Toast.LENGTH_SHORT).show()
+                            }
+                        }) {
+                            Text("Open Speech Settings")
+                        }
+                    }
+                } else if (speechCapabilityState == SpeechCapability.ON_DEVICE_DOWNLOADING) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Button(onClick = { speechManager.checkCapability(conversationDirection.speechLang) }) {
+                        Text("Check Again")
+                    }
+                } else if (
+                    speechCapabilityState == SpeechCapability.ONLINE_ONLY ||
+                    speechCapabilityState == SpeechCapability.UNSUPPORTED ||
+                    speechCapabilityState == SpeechCapability.DETECTION_UNAVAILABLE
+                ) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Button(onClick = {
+                        val success = speechManager.openSpeechSettings()
+                        if (!success) {
+                            Toast.makeText(context, "Cannot open settings on this device.", Toast.LENGTH_SHORT).show()
+                        }
+                    }) {
+                        Text("Open Speech Settings")
+                    }
+                }
+            }
+        }
 
         // Input Section
         Column(modifier = Modifier.fillMaxWidth()) {
@@ -223,8 +297,7 @@ fun ConversationScreen(modifier: Modifier = Modifier) {
                     if (currentTranslation is TranslationState.Success) {
                         val currentTtsState = ttsState
                         if (currentTtsState is TtsState.Ready) {
-                            val ttsLang = if (isTamilToEnglish) "en-IN" else "ta-IN"
-                            ttsManager.speak(currentTranslation.text, ttsLang)
+                            ttsManager.speak(currentTranslation.text, conversationDirection.ttsLang)
                         } else if (currentTtsState is TtsState.Error) {
                             Toast.makeText(context, currentTtsState.message, Toast.LENGTH_SHORT).show()
                         } else {
