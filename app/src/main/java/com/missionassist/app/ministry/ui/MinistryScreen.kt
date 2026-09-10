@@ -12,6 +12,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.missionassist.app.ministry.model.MinistryCategory
 import com.missionassist.app.ministry.model.MinistryResource
 
 @Composable
@@ -30,7 +31,7 @@ fun MinistryScreen(
         topBar = {
             val title = when (val state = navState) {
                 is MinistryNavState.Home -> "Ministry Resources"
-                is MinistryNavState.CategoryList -> state.category
+                is MinistryNavState.CategoryList -> state.category.displayName
                 is MinistryNavState.ResourceDetail -> "Resource Details"
             }
             MinistryTopBar(
@@ -84,7 +85,7 @@ fun MinistryTopBar(title: String, showBackButton: Boolean, onBackClick: () -> Un
 }
 
 @Composable
-fun MinistryCategoryListScreen(categories: List<String>, onCategoryClick: (String) -> Unit) {
+fun MinistryCategoryListScreen(categories: List<MinistryCategory>, onCategoryClick: (MinistryCategory) -> Unit) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(16.dp),
@@ -98,7 +99,7 @@ fun MinistryCategoryListScreen(categories: List<String>, onCategoryClick: (Strin
                 elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
             ) {
                 Text(
-                    text = category,
+                    text = category.displayName,
                     style = MaterialTheme.typography.titleMedium,
                     modifier = Modifier.padding(16.dp)
                 )
@@ -147,16 +148,16 @@ fun MinistryResourceDetailScreen(resource: MinistryResource) {
     ) {
         Text(text = resource.title, style = MaterialTheme.typography.headlineSmall, color = MaterialTheme.colorScheme.primary)
         Spacer(modifier = Modifier.height(8.dp))
-
-        Text(text = "Category: ${resource.category}", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.secondary)
+        
+        Text(text = "Category: ${resource.category.displayName}", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.secondary)
         Spacer(modifier = Modifier.height(16.dp))
-
+        
         Text(text = resource.description, style = MaterialTheme.typography.bodyLarge)
         Spacer(modifier = Modifier.height(24.dp))
-
+        
         Text(text = "Content", style = MaterialTheme.typography.titleMedium)
         Spacer(modifier = Modifier.height(8.dp))
-
+        
         Card(
             modifier = Modifier.fillMaxWidth(),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)

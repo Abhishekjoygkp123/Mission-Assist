@@ -12,19 +12,25 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.missionassist.app.assistance.model.AssistanceCategory
 import com.missionassist.app.assistance.model.AssistanceItem
 
 @Composable
 fun AssistanceScreen(
     modifier: Modifier = Modifier,
     viewModel: AssistanceViewModel = remember { AssistanceViewModel() },
+    onNavigateUp: () -> Unit,
     onUseInConversation: (AssistanceItem) -> Unit
 ) {
     val navState by viewModel.navState.collectAsState()
 
     // Handle system back button
-    BackHandler(enabled = navState !is AssistanceNavState.Home) {
-        viewModel.navigateBack()
+    BackHandler {
+        if (navState is AssistanceNavState.Home) {
+            onNavigateUp()
+        } else {
+            viewModel.navigateBack()
+        }
     }
 
     Scaffold(
@@ -32,7 +38,7 @@ fun AssistanceScreen(
         topBar = {
             val title = when (val state = navState) {
                 is AssistanceNavState.Home -> "Assistance Categories"
-                is AssistanceNavState.CategoryList -> state.category
+                is AssistanceNavState.CategoryList -> state.category.displayName
                 is AssistanceNavState.ItemDetail -> "Details"
             }
             AssistanceTopBar(
@@ -89,7 +95,7 @@ fun AssistanceTopBar(title: String, showBackButton: Boolean, onBackClick: () -> 
 }
 
 @Composable
-fun CategoryListScreen(categories: List<String>, onCategoryClick: (String) -> Unit) {
+fun CategoryListScreen(categories: List<AssistanceCategory>, onCategoryClick: (AssistanceCategory) -> Unit) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(16.dp),
@@ -103,7 +109,7 @@ fun CategoryListScreen(categories: List<String>, onCategoryClick: (String) -> Un
                 elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
             ) {
                 Text(
-                    text = category,
+                    text = category.displayName,
                     style = MaterialTheme.typography.titleMedium,
                     modifier = Modifier.padding(16.dp)
                 )
@@ -153,7 +159,7 @@ fun ItemDetailScreen(item: AssistanceItem, onUseInConversation: (AssistanceItem)
         Text(text = item.title, style = MaterialTheme.typography.headlineSmall, color = MaterialTheme.colorScheme.primary)
         Spacer(modifier = Modifier.height(16.dp))
 
-        DetailRow("Category", item.category)
+        DetailRow("Category", item.category.displayName)
         DetailRow("Guidance", item.guidance)
         DetailRow("English Phrase", item.canonicalEnglishPhrase)
 
@@ -162,7 +168,7 @@ fun ItemDetailScreen(item: AssistanceItem, onUseInConversation: (AssistanceItem)
         }
 
         item.criticality?.let {
-            DetailRow("Criticality", it)
+            DetailRow("Criticality", it.displayName)
         }
 
         DetailRow("Review Status", item.bilingualReviewStatus)

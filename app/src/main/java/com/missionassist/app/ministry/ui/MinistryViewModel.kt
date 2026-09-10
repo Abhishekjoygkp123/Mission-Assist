@@ -3,6 +3,7 @@ package com.missionassist.app.ministry.ui
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.missionassist.app.ministry.data.MinistryRepository
+import com.missionassist.app.ministry.model.MinistryCategory
 import com.missionassist.app.ministry.model.MinistryResource
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -11,7 +12,7 @@ import kotlinx.coroutines.launch
 
 sealed class MinistryNavState {
     object Home : MinistryNavState()
-    data class CategoryList(val category: String) : MinistryNavState()
+    data class CategoryList(val category: MinistryCategory) : MinistryNavState()
     data class ResourceDetail(val resource: MinistryResource) : MinistryNavState()
 }
 
@@ -36,20 +37,15 @@ class MinistryViewModel : ViewModel() {
         }
     }
 
-    fun getCategories(): List<String> {
-        return listOf(
-            "Scripture",
-            "Prayer prompts",
-            "Ministry conversation aids",
-            "Short field notes"
-        )
+    fun getCategories(): List<MinistryCategory> {
+        return MinistryCategory.values().toList()
     }
 
-    fun getResourcesForCategory(category: String): List<MinistryResource> {
+    fun getResourcesForCategory(category: MinistryCategory): List<MinistryResource> {
         return _allResources.value.filter { it.category == category }
     }
 
-    fun navigateToCategory(category: String) {
+    fun navigateToCategory(category: MinistryCategory) {
         _navState.value = MinistryNavState.CategoryList(category)
     }
 
