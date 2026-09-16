@@ -7,6 +7,7 @@ import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.setMain
 import org.junit.After
+import org.junit.Assert
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -37,6 +38,13 @@ class AssistanceViewModelTest {
         val state = viewModel.navState.value
         assertTrue(state is AssistanceNavState.CategoryList)
         assertEquals(AssistanceCategory.EMERGENCY_HELP, (state as AssistanceNavState.CategoryList).category)
+        assertTrue(viewModel.isDeepLinked)
+    }
+
+    @Test
+    fun testIsDeepLinkedIsFalseWhenNoInitialCategory() {
+        val viewModel = AssistanceViewModel()
+        Assert.assertFalse(viewModel.isDeepLinked)
     }
 
     @Test

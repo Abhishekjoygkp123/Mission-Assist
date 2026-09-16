@@ -24,10 +24,13 @@ fun AssistanceScreen(
     onUseInConversation: (AssistanceItem) -> Unit
 ) {
     val navState by viewModel.navState.collectAsState()
+    
+    val shouldExitOnBack = navState is AssistanceNavState.Home || 
+        (navState is AssistanceNavState.CategoryList && viewModel.isDeepLinked)
 
     // Handle system back button
     BackHandler(enabled = true) {
-        if (navState is AssistanceNavState.Home) {
+        if (shouldExitOnBack) {
             onNavigateUp()
         } else {
             viewModel.navigateBack()
@@ -46,7 +49,7 @@ fun AssistanceScreen(
                 title = title,
                 showBackButton = true,
                 onBackClick = { 
-                    if (navState is AssistanceNavState.Home) {
+                    if (shouldExitOnBack) {
                         onNavigateUp()
                     } else {
                         viewModel.navigateBack()

@@ -21,6 +21,8 @@ class AssistanceViewModel(
 ) : ViewModel() {
     private val repository = AssistanceRepository()
 
+    val isDeepLinked: Boolean = initialCategory != null
+
     private val _allItems = MutableStateFlow<List<AssistanceItem>>(emptyList())
     val allItems: StateFlow<List<AssistanceItem>> = _allItems.asStateFlow()
 

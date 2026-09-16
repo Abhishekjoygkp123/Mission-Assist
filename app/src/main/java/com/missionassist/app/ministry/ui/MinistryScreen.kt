@@ -23,9 +23,12 @@ fun MinistryScreen(
     onNavigateUp: () -> Unit
 ) {
     val navState by viewModel.navState.collectAsState()
+    
+    val shouldExitOnBack = navState is MinistryNavState.Home || 
+        (navState is MinistryNavState.CategoryList && viewModel.isDeepLinked)
 
     BackHandler(enabled = true) {
-        if (navState is MinistryNavState.Home) {
+        if (shouldExitOnBack) {
             onNavigateUp()
         } else {
             viewModel.navigateBack()
@@ -44,7 +47,7 @@ fun MinistryScreen(
                 title = title,
                 showBackButton = true,
                 onBackClick = { 
-                    if (navState is MinistryNavState.Home) {
+                    if (shouldExitOnBack) {
                         onNavigateUp()
                     } else {
                         viewModel.navigateBack()

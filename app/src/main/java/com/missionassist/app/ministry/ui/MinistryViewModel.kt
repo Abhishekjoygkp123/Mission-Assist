@@ -21,6 +21,8 @@ class MinistryViewModel(
 ) : ViewModel() {
     private val repository = MinistryRepository()
 
+    val isDeepLinked: Boolean = initialCategory != null
+
     private val _allResources = MutableStateFlow<List<MinistryResource>>(emptyList())
     val allResources: StateFlow<List<MinistryResource>> = _allResources.asStateFlow()
 
