@@ -54,7 +54,9 @@ fun MissionAssistApp(modifier: Modifier = Modifier) {
                     onNavigateUp = { currentDestination = Destination.SITUATION },
                     onUseInConversation = { /* Stage F */ }
                 )
-                Destination.MINISTRY -> com.missionassist.app.ministry.ui.MinistryScreen()
+                Destination.MINISTRY -> com.missionassist.app.ministry.ui.MinistryScreen(
+                    onNavigateUp = { currentDestination = Destination.SITUATION }
+                )
             }
         }
     }

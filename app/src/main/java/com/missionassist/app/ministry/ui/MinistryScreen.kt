@@ -18,12 +18,17 @@ import com.missionassist.app.ministry.model.MinistryResource
 @Composable
 fun MinistryScreen(
     modifier: Modifier = Modifier,
-    viewModel: MinistryViewModel = remember { MinistryViewModel() }
+    viewModel: MinistryViewModel = remember { MinistryViewModel() },
+    onNavigateUp: () -> Unit
 ) {
     val navState by viewModel.navState.collectAsState()
 
-    BackHandler(enabled = navState !is MinistryNavState.Home) {
-        viewModel.navigateBack()
+    BackHandler(enabled = true) {
+        if (navState is MinistryNavState.Home) {
+            onNavigateUp()
+        } else {
+            viewModel.navigateBack()
+        }
     }
 
     Scaffold(
@@ -36,8 +41,14 @@ fun MinistryScreen(
             }
             MinistryTopBar(
                 title = title,
-                showBackButton = navState !is MinistryNavState.Home,
-                onBackClick = { viewModel.navigateBack() }
+                showBackButton = true,
+                onBackClick = { 
+                    if (navState is MinistryNavState.Home) {
+                        onNavigateUp()
+                    } else {
+                        viewModel.navigateBack()
+                    }
+                }
             )
         }
     ) { paddingValues ->
