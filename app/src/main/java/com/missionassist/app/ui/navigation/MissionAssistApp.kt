@@ -17,7 +17,7 @@ import com.missionassist.app.ui.conversation.ConversationScreen
 import com.missionassist.app.ui.situation.SituationScreen
 
 enum class Destination {
-    CONVERSATION, SITUATION
+    CONVERSATION, SITUATION, ASSISTANCE, MINISTRY
 }
 
 @Composable
@@ -46,7 +46,15 @@ fun MissionAssistApp(modifier: Modifier = Modifier) {
         Box(modifier = Modifier.padding(innerPadding).fillMaxSize()) {
             when (currentDestination) {
                 Destination.CONVERSATION -> ConversationScreen()
-                Destination.SITUATION -> SituationScreen()
+                Destination.SITUATION -> SituationScreen(
+                    onNavigateToAssistance = { currentDestination = Destination.ASSISTANCE },
+                    onNavigateToMinistry = { currentDestination = Destination.MINISTRY }
+                )
+                Destination.ASSISTANCE -> com.missionassist.app.assistance.ui.AssistanceScreen(
+                    onNavigateUp = { currentDestination = Destination.SITUATION },
+                    onUseInConversation = { /* Stage F */ }
+                )
+                Destination.MINISTRY -> com.missionassist.app.ministry.ui.MinistryScreen()
             }
         }
     }
