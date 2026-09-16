@@ -3,6 +3,7 @@ package com.missionassist.app.assistance.ui
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.missionassist.app.assistance.data.AssistanceRepository
+import com.missionassist.app.assistance.model.AssistanceCategory
 import com.missionassist.app.assistance.model.AssistanceItem
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -11,7 +12,7 @@ import kotlinx.coroutines.launch
 
 sealed class AssistanceNavState {
     object Home : AssistanceNavState()
-    data class CategoryList(val category: String) : AssistanceNavState()
+    data class CategoryList(val category: AssistanceCategory) : AssistanceNavState()
     data class ItemDetail(val item: AssistanceItem) : AssistanceNavState()
 }
 
@@ -36,15 +37,15 @@ class AssistanceViewModel : ViewModel() {
         }
     }
 
-    fun getCategories(): List<String> {
+    fun getCategories(): List<AssistanceCategory> {
         return _allItems.value.map { it.category }.distinct()
     }
 
-    fun getItemsForCategory(category: String): List<AssistanceItem> {
+    fun getItemsForCategory(category: AssistanceCategory): List<AssistanceItem> {
         return _allItems.value.filter { it.category == category }
     }
 
-    fun navigateToCategory(category: String) {
+    fun navigateToCategory(category: AssistanceCategory) {
         _navState.value = AssistanceNavState.CategoryList(category)
     }
 

@@ -6,7 +6,7 @@ data class AssistanceItem(
     val guidance: String,
     val canonicalEnglishPhrase: String,
     val canonicalTamilPhrase: String?,
-    val category: String,
-    val criticality: String?,
+    val category: AssistanceCategory,
+    val criticality: AssistanceCriticality,
     val bilingualReviewStatus: String
 )
