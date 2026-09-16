@@ -31,10 +31,16 @@ class SpeechRecognizerManager(private val speechClient: SpeechClient) {
 
     private var currentSessionId: Long = 0L
 
-    fun checkCapability(languageCode: String) {
+    fun setCapabilityState(capability: SpeechCapability) {
+        _capabilityState.value = capability
+    }
+
+    fun checkCapability(languageCode: String, onResult: (SpeechCapability) -> Unit = {}) {
         _downloadError.value = null
         speechClient.checkCapability(languageCode) { capability ->
+            SpeechCapabilityCache.update(languageCode, capability)
             _capabilityState.value = capability
+            onResult(capability)
         }
     }
 

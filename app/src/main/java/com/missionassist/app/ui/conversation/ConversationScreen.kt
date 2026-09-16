@@ -79,7 +79,13 @@ fun ConversationScreen(modifier: Modifier = Modifier) {
     }
 
     LaunchedEffect(conversationDirection) {
-        speechManager.checkCapability(conversationDirection.speechLang)
+        val lang = conversationDirection.speechLang
+        val cached = com.missionassist.app.speech.SpeechCapabilityCache.get(lang)
+        if (cached != null && com.missionassist.app.speech.SpeechCapabilityCache.isGood(cached)) {
+            speechManager.setCapabilityState(cached)
+        } else {
+            speechManager.checkCapability(lang)
+        }
     }
 
     val permissionLauncher = rememberLauncherForActivityResult(
@@ -170,6 +176,7 @@ fun ConversationScreen(modifier: Modifier = Modifier) {
                             Text("Download for Offline Use")
                         }
                         Button(onClick = {
+                            com.missionassist.app.speech.SpeechCapabilityCache.remove(conversationDirection.speechLang)
                             val success = speechManager.openSpeechSettings()
                             if (!success) {
                                 Toast.makeText(context, "Cannot open settings on this device.", Toast.LENGTH_SHORT).show()
@@ -190,6 +197,7 @@ fun ConversationScreen(modifier: Modifier = Modifier) {
                 ) {
                     Spacer(modifier = Modifier.height(8.dp))
                     Button(onClick = {
+                        com.missionassist.app.speech.SpeechCapabilityCache.remove(conversationDirection.speechLang)
                         val success = speechManager.openSpeechSettings()
                         if (!success) {
                             Toast.makeText(context, "Cannot open settings on this device.", Toast.LENGTH_SHORT).show()
