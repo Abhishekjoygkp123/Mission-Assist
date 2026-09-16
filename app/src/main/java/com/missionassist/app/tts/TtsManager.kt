@@ -48,8 +48,17 @@ class TtsManager(context: Context) {
     }
 
     fun shutdown() {
-        tts?.stop()
-        tts?.shutdown()
+        val ttsToShutdown = tts
         tts = null
+        if (ttsToShutdown != null) {
+            Thread {
+                try {
+                    ttsToShutdown.stop()
+                    ttsToShutdown.shutdown()
+                } catch (e: Exception) {
+                    // Ignored
+                }
+            }.start()
+        }
     }
 }
