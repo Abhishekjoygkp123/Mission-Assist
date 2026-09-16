@@ -16,13 +16,17 @@ sealed class AssistanceNavState {
     data class ItemDetail(val item: AssistanceItem) : AssistanceNavState()
 }
 
-class AssistanceViewModel : ViewModel() {
+class AssistanceViewModel(
+    private val initialCategory: AssistanceCategory? = null
+) : ViewModel() {
     private val repository = AssistanceRepository()
 
     private val _allItems = MutableStateFlow<List<AssistanceItem>>(emptyList())
     val allItems: StateFlow<List<AssistanceItem>> = _allItems.asStateFlow()
 
-    private val _navState = MutableStateFlow<AssistanceNavState>(AssistanceNavState.Home)
+    private val _navState = MutableStateFlow<AssistanceNavState>(
+        initialCategory?.let { AssistanceNavState.CategoryList(it) } ?: AssistanceNavState.Home
+    )
     val navState: StateFlow<AssistanceNavState> = _navState.asStateFlow()
 
     init {

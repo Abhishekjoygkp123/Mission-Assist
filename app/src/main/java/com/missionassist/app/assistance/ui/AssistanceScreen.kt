@@ -18,7 +18,8 @@ import com.missionassist.app.assistance.model.AssistanceItem
 @Composable
 fun AssistanceScreen(
     modifier: Modifier = Modifier,
-    viewModel: AssistanceViewModel = remember { AssistanceViewModel() },
+    initialCategory: AssistanceCategory? = null,
+    viewModel: AssistanceViewModel = remember(initialCategory) { AssistanceViewModel(initialCategory) },
     onNavigateUp: () -> Unit,
     onUseInConversation: (AssistanceItem) -> Unit
 ) {

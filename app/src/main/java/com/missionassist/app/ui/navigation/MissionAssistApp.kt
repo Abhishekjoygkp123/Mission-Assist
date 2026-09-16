@@ -10,11 +10,15 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import com.missionassist.app.ui.conversation.ConversationScreen
 import com.missionassist.app.ui.situation.SituationScreen
+
+import com.missionassist.app.assistance.model.AssistanceCategory
+import com.missionassist.app.ministry.model.MinistryCategory
 
 enum class Destination {
     CONVERSATION, SITUATION, ASSISTANCE, MINISTRY
@@ -23,6 +27,8 @@ enum class Destination {
 @Composable
 fun MissionAssistApp(modifier: Modifier = Modifier) {
     var currentDestination by rememberSaveable { mutableStateOf(Destination.CONVERSATION) }
+    var assistanceInitialCategory by remember { mutableStateOf<AssistanceCategory?>(null) }
+    var ministryInitialCategory by remember { mutableStateOf<MinistryCategory?>(null) }
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
@@ -47,14 +53,22 @@ fun MissionAssistApp(modifier: Modifier = Modifier) {
             when (currentDestination) {
                 Destination.CONVERSATION -> ConversationScreen()
                 Destination.SITUATION -> SituationScreen(
-                    onNavigateToAssistance = { currentDestination = Destination.ASSISTANCE },
-                    onNavigateToMinistry = { currentDestination = Destination.MINISTRY }
+                    onNavigateToAssistance = { category -> 
+                        assistanceInitialCategory = category
+                        currentDestination = Destination.ASSISTANCE 
+                    },
+                    onNavigateToMinistry = { category -> 
+                        ministryInitialCategory = category
+                        currentDestination = Destination.MINISTRY 
+                    }
                 )
                 Destination.ASSISTANCE -> com.missionassist.app.assistance.ui.AssistanceScreen(
+                    initialCategory = assistanceInitialCategory,
                     onNavigateUp = { currentDestination = Destination.SITUATION },
                     onUseInConversation = { /* Stage F */ }
                 )
                 Destination.MINISTRY -> com.missionassist.app.ministry.ui.MinistryScreen(
+                    initialCategory = ministryInitialCategory,
                     onNavigateUp = { currentDestination = Destination.SITUATION }
                 )
             }

@@ -18,7 +18,8 @@ import com.missionassist.app.ministry.model.MinistryResource
 @Composable
 fun MinistryScreen(
     modifier: Modifier = Modifier,
-    viewModel: MinistryViewModel = remember { MinistryViewModel() },
+    initialCategory: MinistryCategory? = null,
+    viewModel: MinistryViewModel = remember(initialCategory) { MinistryViewModel(initialCategory) },
     onNavigateUp: () -> Unit
 ) {
     val navState by viewModel.navState.collectAsState()

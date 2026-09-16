@@ -16,13 +16,17 @@ sealed class MinistryNavState {
     data class ResourceDetail(val resource: MinistryResource) : MinistryNavState()
 }
 
-class MinistryViewModel : ViewModel() {
+class MinistryViewModel(
+    private val initialCategory: MinistryCategory? = null
+) : ViewModel() {
     private val repository = MinistryRepository()
 
     private val _allResources = MutableStateFlow<List<MinistryResource>>(emptyList())
     val allResources: StateFlow<List<MinistryResource>> = _allResources.asStateFlow()
 
-    private val _navState = MutableStateFlow<MinistryNavState>(MinistryNavState.Home)
+    private val _navState = MutableStateFlow<MinistryNavState>(
+        initialCategory?.let { MinistryNavState.CategoryList(it) } ?: MinistryNavState.Home
+    )
     val navState: StateFlow<MinistryNavState> = _navState.asStateFlow()
 
     init {
