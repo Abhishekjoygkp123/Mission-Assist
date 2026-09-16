@@ -30,6 +30,20 @@ fun MissionAssistApp(modifier: Modifier = Modifier) {
     var assistanceInitialCategory by remember { mutableStateOf<AssistanceCategory?>(null) }
     var ministryInitialCategory by remember { mutableStateOf<MinistryCategory?>(null) }
 
+    val onNavigateToAssistance = remember {
+        { category: AssistanceCategory ->
+            assistanceInitialCategory = category
+            currentDestination = Destination.ASSISTANCE
+        }
+    }
+
+    val onNavigateToMinistry = remember {
+        { category: MinistryCategory ->
+            ministryInitialCategory = category
+            currentDestination = Destination.MINISTRY
+        }
+    }
+
     Scaffold(
         modifier = modifier.fillMaxSize(),
         bottomBar = {
@@ -53,14 +67,8 @@ fun MissionAssistApp(modifier: Modifier = Modifier) {
             when (currentDestination) {
                 Destination.CONVERSATION -> ConversationScreen()
                 Destination.SITUATION -> SituationScreen(
-                    onNavigateToAssistance = { category -> 
-                        assistanceInitialCategory = category
-                        currentDestination = Destination.ASSISTANCE 
-                    },
-                    onNavigateToMinistry = { category -> 
-                        ministryInitialCategory = category
-                        currentDestination = Destination.MINISTRY 
-                    }
+                    onNavigateToAssistance = onNavigateToAssistance,
+                    onNavigateToMinistry = onNavigateToMinistry
                 )
                 Destination.ASSISTANCE -> com.missionassist.app.assistance.ui.AssistanceScreen(
                     initialCategory = assistanceInitialCategory,
