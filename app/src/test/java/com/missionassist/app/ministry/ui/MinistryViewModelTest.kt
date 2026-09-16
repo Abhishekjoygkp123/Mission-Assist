@@ -26,6 +26,20 @@ class MinistryViewModelTest {
     }
 
     @Test
+    fun testInitialStateIsHome() {
+        val viewModel = MinistryViewModel()
+        assertEquals(MinistryNavState.Home, viewModel.navState.value)
+    }
+
+    @Test
+    fun testInitialStateWithInitialCategory() {
+        val viewModel = MinistryViewModel(initialCategory = MinistryCategory.SCRIPTURE)
+        val state = viewModel.navState.value
+        assertTrue(state is MinistryNavState.CategoryList)
+        assertEquals(MinistryCategory.SCRIPTURE, (state as MinistryNavState.CategoryList).category)
+    }
+
+    @Test
     fun testGetCategoriesReturnsAllEnums() {
         val viewModel = MinistryViewModel()
         val categories = viewModel.getCategories()

@@ -32,6 +32,14 @@ class AssistanceViewModelTest {
     }
 
     @Test
+    fun testInitialStateWithInitialCategory() {
+        val viewModel = AssistanceViewModel(initialCategory = AssistanceCategory.EMERGENCY_HELP)
+        val state = viewModel.navState.value
+        assertTrue(state is AssistanceNavState.CategoryList)
+        assertEquals(AssistanceCategory.EMERGENCY_HELP, (state as AssistanceNavState.CategoryList).category)
+    }
+
+    @Test
     fun testNavigationToCategory() {
         val viewModel = AssistanceViewModel()
         viewModel.navigateToCategory(AssistanceCategory.MEDICAL_HELP)
