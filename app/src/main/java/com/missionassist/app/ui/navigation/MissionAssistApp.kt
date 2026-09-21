@@ -29,6 +29,7 @@ fun MissionAssistApp(modifier: Modifier = Modifier) {
     var currentDestination by rememberSaveable { mutableStateOf(Destination.CONVERSATION) }
     var assistanceInitialCategory by remember { mutableStateOf<AssistanceCategory?>(null) }
     var ministryInitialCategory by remember { mutableStateOf<MinistryCategory?>(null) }
+    var conversationInitialText by remember { mutableStateOf<String?>(null) }
 
     val onNavigateToAssistance = remember {
         { category: AssistanceCategory ->
@@ -44,6 +45,13 @@ fun MissionAssistApp(modifier: Modifier = Modifier) {
         }
     }
 
+    val onUseInConversation = remember {
+        { text: String ->
+            conversationInitialText = text
+            currentDestination = Destination.CONVERSATION
+        }
+    }
+
     Scaffold(
         modifier = modifier.fillMaxSize(),
         bottomBar = {
@@ -52,10 +60,13 @@ fun MissionAssistApp(modifier: Modifier = Modifier) {
                     icon = { Text("💬") },
                     label = { Text("Conversation") },
                     selected = currentDestination == Destination.CONVERSATION,
-                    onClick = { currentDestination = Destination.CONVERSATION }
+                    onClick = { 
+                        conversationInitialText = null
+                        currentDestination = Destination.CONVERSATION 
+                    }
                 )
                 NavigationBarItem(
-                    icon = { Text("📋") },
+                    icon = { Text("🚨") },
                     label = { Text("Situation") },
                     selected = currentDestination == Destination.SITUATION,
                     onClick = { currentDestination = Destination.SITUATION }
@@ -65,7 +76,7 @@ fun MissionAssistApp(modifier: Modifier = Modifier) {
     ) { innerPadding ->
         Box(modifier = Modifier.padding(innerPadding).fillMaxSize()) {
             when (currentDestination) {
-                Destination.CONVERSATION -> ConversationScreen()
+                Destination.CONVERSATION -> ConversationScreen(initialText = conversationInitialText)
                 Destination.SITUATION -> SituationScreen(
                     onNavigateToAssistance = onNavigateToAssistance,
                     onNavigateToMinistry = onNavigateToMinistry
@@ -73,7 +84,7 @@ fun MissionAssistApp(modifier: Modifier = Modifier) {
                 Destination.ASSISTANCE -> com.missionassist.app.assistance.ui.AssistanceScreen(
                     initialCategory = assistanceInitialCategory,
                     onNavigateUp = { currentDestination = Destination.SITUATION },
-                    onUseInConversation = { /* Stage F */ }
+                    onUseInConversation = { item -> onUseInConversation(item.canonicalEnglishPhrase) }
                 )
                 Destination.MINISTRY -> com.missionassist.app.ministry.ui.MinistryScreen(
                     initialCategory = ministryInitialCategory,

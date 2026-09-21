@@ -44,7 +44,10 @@ import com.missionassist.app.tts.TtsManager
 import com.missionassist.app.tts.TtsState
 
 @Composable
-fun ConversationScreen(modifier: Modifier = Modifier) {
+fun ConversationScreen(
+    modifier: Modifier = Modifier,
+    initialText: String? = null
+) {
     val context = LocalContext.current
     val speechManager = remember { SpeechRecognizerManager(DefaultSpeechClient(context)) }
     val speechState by speechManager.state.collectAsState()
@@ -58,6 +61,7 @@ fun ConversationScreen(modifier: Modifier = Modifier) {
     val ttsState by ttsManager.state.collectAsState()
 
     var conversationDirection by remember { mutableStateOf(ConversationDirection.ENGLISH_TO_TAMIL) }
+    var inputText by remember { mutableStateOf(initialText ?: "") }
 
     DisposableEffect(Unit) {
         onDispose {
@@ -70,11 +74,7 @@ fun ConversationScreen(modifier: Modifier = Modifier) {
     LaunchedEffect(speechState) {
         val currentState = speechState
         if (currentState is SpeechState.Result) { 
-            translationManager.translate(
-                currentState.text, 
-                conversationDirection.sourceMlKitLang, 
-                conversationDirection.targetMlKitLang
-            )
+            inputText = currentState.text
         }
     }
 
@@ -128,9 +128,10 @@ fun ConversationScreen(modifier: Modifier = Modifier) {
                 conversationDirection = conversationDirection.swap()
                 speechManager.clear()
                 translationManager.clear()
+                inputText = ""
             }) {
                 Text(
-                    text = "⇄",
+                    text = "↔",
                     style = MaterialTheme.typography.headlineMedium
                 )
             }
@@ -211,28 +212,19 @@ fun ConversationScreen(modifier: Modifier = Modifier) {
 
         // Input Section
         Column(modifier = Modifier.fillMaxWidth()) {
-            Text(
-                text = "You said",
-                style = MaterialTheme.typography.labelLarge,
-                modifier = Modifier.padding(bottom = 8.dp)
-            )
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(100.dp)
-            ) {
-                val youSaidText = when (val state = speechState) {
-                    is SpeechState.Idle -> "Your speech will appear here"
-                    is SpeechState.Listening -> "Listening..."
-                    is SpeechState.Result -> state.text
-                    is SpeechState.Error -> state.message
-                }
-                Text(
-                    text = youSaidText,
-                    modifier = Modifier.padding(16.dp),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+            val statusText = when (val state = speechState) {
+                is SpeechState.Idle -> ""
+                is SpeechState.Listening -> "Listening..."
+                is SpeechState.Result -> "Speech captured"
+                is SpeechState.Error -> state.message
             }
+            androidx.compose.material3.OutlinedTextField(
+                value = inputText,
+                onValueChange = { inputText = it },
+                label = { Text("You said") },
+                supportingText = if (statusText.isNotEmpty()) { { Text(statusText) } } else null,
+                modifier = Modifier.fillMaxWidth().height(120.dp)
+            )
         }
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -297,6 +289,21 @@ fun ConversationScreen(modifier: Modifier = Modifier) {
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text(text = "Start Conversation")
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+            Button(
+                onClick = {
+                    if (inputText.isNotBlank()) {
+                        translationManager.translate(
+                            inputText, 
+                            conversationDirection.sourceMlKitLang, 
+                            conversationDirection.targetMlKitLang
+                        )
+                    }
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Translate")
             }
             Spacer(modifier = Modifier.height(8.dp))
             Button(
