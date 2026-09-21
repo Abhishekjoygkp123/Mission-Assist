@@ -75,6 +75,11 @@ fun ConversationScreen(
         val currentState = speechState
         if (currentState is SpeechState.Result) { 
             inputText = currentState.text
+            translationManager.translate(
+                currentState.text, 
+                conversationDirection.sourceMlKitLang, 
+                conversationDirection.targetMlKitLang
+            )
         }
     }
 
