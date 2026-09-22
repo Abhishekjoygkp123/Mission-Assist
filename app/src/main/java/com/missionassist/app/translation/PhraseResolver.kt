@@ -14,6 +14,12 @@ object PhraseResolver {
         PhraseEntry("Hello", "வணக்கம்"),
         PhraseEntry("How are you?", "நீங்கள் எப்படி இருக்கிறீர்கள்"),
         PhraseEntry("Thank you", "நன்றி"),
+        PhraseEntry("I need an ambulance", "எனக்கு ஆம்புலன்ஸ் தேவை"),
+        PhraseEntry("I am in pain", "எனக்கு வலி இருக்குது"),
+        PhraseEntry("I need medicine", "எனக்கு மருந்து வேண்டும்"),
+        PhraseEntry("Call the police", "போலீஸை கூப்பிடுங்க"),
+        PhraseEntry("There is a fire", "அங்கே தீ பிடித்துவிட்டது"),
+        PhraseEntry("I need drinking water", "எனக்கு குடிக்கத்தண்ணீர் வேண்டும்"),
         PhraseEntry("I need water", "எனக்கு தண்ணீர் வேண்டும்"),
         PhraseEntry("I need food", "எனக்கு உணவு வேண்டும்"),
         PhraseEntry(

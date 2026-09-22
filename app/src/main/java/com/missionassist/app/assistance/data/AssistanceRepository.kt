@@ -18,7 +18,7 @@ class AssistanceRepository {
             AssistanceItem("m6", "Medicine Request", "Use to request medication or a pharmacy.", "I need medicine", null, AssistanceCategory.MEDICAL_HELP, AssistanceCriticality.MEDIUM, "Needs Bilingual Review"),
 
             // Emergency Help category
-            AssistanceItem("e1", "Police Request", "Use for security emergencies.", "I need the police", null, AssistanceCategory.EMERGENCY_HELP, AssistanceCriticality.CRITICAL, "Needs Bilingual Review"),
+            AssistanceItem("e1", "Police Request", "Use for security emergencies.", "Call the police", null, AssistanceCategory.EMERGENCY_HELP, AssistanceCriticality.CRITICAL, "Needs Bilingual Review"),
             AssistanceItem("e2", "Fire Report", "Use to report a fire.", "There is a fire", null, AssistanceCategory.EMERGENCY_HELP, AssistanceCriticality.CRITICAL, "Needs Bilingual Review"),
 
             // Essential Needs category
