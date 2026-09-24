@@ -82,4 +82,16 @@ class TranslationManagerTest {
         // State should remain Idle
         assertEquals(TranslationState.Idle, manager.state.value)
     }
+
+    @Test
+    fun testSetTranslationCreatesSuccessState() {
+        val fakeClient = FakeTranslationClient()
+        val manager = TranslationManager(fakeClient)
+
+        manager.setTranslation("எனக்கு வலி இருக்குது", TranslationSource.VERIFIED_PHRASE)
+
+        val state = manager.state.value as TranslationState.Success
+        assertEquals("எனக்கு வலி இருக்குது", state.text)
+        assertEquals(TranslationSource.VERIFIED_PHRASE, state.source)
+    }
 }
