@@ -30,6 +30,7 @@ fun MissionAssistApp(modifier: Modifier = Modifier) {
     var assistanceInitialCategory by remember { mutableStateOf<AssistanceCategory?>(null) }
     var ministryInitialCategory by remember { mutableStateOf<MinistryCategory?>(null) }
     var conversationInitialText by remember { mutableStateOf<String?>(null) }
+    var conversationInitialTamilText by remember { mutableStateOf<String?>(null) }
 
     val onNavigateToAssistance = remember {
         { category: AssistanceCategory ->
@@ -46,8 +47,9 @@ fun MissionAssistApp(modifier: Modifier = Modifier) {
     }
 
     val onUseInConversation = remember {
-        { text: String ->
-            conversationInitialText = text
+        { item: com.missionassist.app.assistance.model.AssistanceItem ->
+            conversationInitialText = item.canonicalEnglishPhrase
+            conversationInitialTamilText = item.canonicalTamilPhrase
             currentDestination = Destination.CONVERSATION
         }
     }
@@ -62,6 +64,7 @@ fun MissionAssistApp(modifier: Modifier = Modifier) {
                     selected = currentDestination == Destination.CONVERSATION,
                     onClick = { 
                         conversationInitialText = null
+                        conversationInitialTamilText = null
                         currentDestination = Destination.CONVERSATION 
                     }
                 )
@@ -76,7 +79,10 @@ fun MissionAssistApp(modifier: Modifier = Modifier) {
     ) { innerPadding ->
         Box(modifier = Modifier.padding(innerPadding).fillMaxSize()) {
             when (currentDestination) {
-                Destination.CONVERSATION -> ConversationScreen(initialText = conversationInitialText)
+                Destination.CONVERSATION -> ConversationScreen(
+                    initialText = conversationInitialText,
+                    initialTamilText = conversationInitialTamilText
+                )
                 Destination.SITUATION -> SituationScreen(
                     onNavigateToAssistance = onNavigateToAssistance,
                     onNavigateToMinistry = onNavigateToMinistry
@@ -84,7 +90,7 @@ fun MissionAssistApp(modifier: Modifier = Modifier) {
                 Destination.ASSISTANCE -> com.missionassist.app.assistance.ui.AssistanceScreen(
                     initialCategory = assistanceInitialCategory,
                     onNavigateUp = { currentDestination = Destination.SITUATION },
-                    onUseInConversation = { item -> onUseInConversation(item.canonicalEnglishPhrase) }
+                    onUseInConversation = { item -> onUseInConversation(item) }
                 )
                 Destination.MINISTRY -> com.missionassist.app.ministry.ui.MinistryScreen(
                     initialCategory = ministryInitialCategory,

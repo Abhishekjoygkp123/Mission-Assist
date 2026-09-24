@@ -46,7 +46,8 @@ import com.missionassist.app.tts.TtsState
 @Composable
 fun ConversationScreen(
     modifier: Modifier = Modifier,
-    initialText: String? = null
+    initialText: String? = null,
+    initialTamilText: String? = null
 ) {
     val context = LocalContext.current
     val speechManager = remember { SpeechRecognizerManager(DefaultSpeechClient(context)) }
@@ -68,6 +69,20 @@ fun ConversationScreen(
             speechManager.destroy()
             translationManager.close()
             ttsManager.shutdown()
+        }
+    }
+
+    LaunchedEffect(initialText, initialTamilText) {
+        if (!initialText.isNullOrBlank()) {
+            if (!initialTamilText.isNullOrBlank()) {
+                translationManager.setTranslation(initialTamilText)
+            } else {
+                translationManager.translate(
+                    initialText,
+                    conversationDirection.sourceMlKitLang,
+                    conversationDirection.targetMlKitLang
+                )
+            }
         }
     }
 

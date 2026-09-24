@@ -70,6 +70,11 @@ class TranslationManager(private val translationClient: TranslationClient) {
         _state.value = TranslationState.Idle
     }
 
+    fun setTranslation(text: String, source: TranslationSource = TranslationSource.VERIFIED_PHRASE) {
+        currentSessionId++
+        _state.value = TranslationState.Success(text, source)
+    }
+
     fun close() {
         currentSessionId++
         translationClient.close()
