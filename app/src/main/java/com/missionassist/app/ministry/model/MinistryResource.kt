@@ -5,5 +5,7 @@ data class MinistryResource(
     val title: String,
     val category: MinistryCategory,
     val description: String,
-    val content: String
+    val content: String,
+    val canonicalTamilText: String? = null,
+    val sourceCitation: String? = null
 )
